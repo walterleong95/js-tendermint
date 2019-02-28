@@ -36,6 +36,7 @@ class LightNode extends EventEmitter {
     super()
 
     this.maxAge = opts.maxAge || THIRTY_DAYS
+    this.trustNode = opts.trustNode
 
     if (state.header.height == null) {
       throw Error('Expected state header to have a height')
@@ -47,13 +48,15 @@ class LightNode extends EventEmitter {
     // but it doesn't hurt to do a sanity check. commit verifification
     // not required for first block, since we might be deriving it from
     // genesis
-    verifyValidatorSet(state.validators, state.header.validators_hash)
-    if (state.header.height > 1 || state.commit != null) {
-      verifyCommit(state.header, state.commit, state.validators)
-    } else {
-      // add genesis validator hash to state
-      let validatorHash = getValidatorSetHash(state.validators)
-      state.header.validators_hash = validatorHash.toString('hex').toUpperCase()
+    if (!this.trustNode) {
+      verifyValidatorSet(state.validators, state.header.validators_hash)
+      if (state.header.height > 1 || state.commit != null) {
+        verifyCommit(state.header, state.commit, state.validators)
+      } else {
+        // add genesis validator hash to state
+        let validatorHash = getValidatorSetHash(state.validators)
+        state.header.validators_hash = validatorHash.toString('hex').toUpperCase()
+      }
     }
 
     this._state = state
@@ -111,7 +114,8 @@ class LightNode extends EventEmitter {
     try {
       // test if this commit is signed by 2/3+ of our old set
       // (throws if not)
-      verifyCommitSigs(header, commit, this._state.validators)
+      if (!this.trustNode)
+        verifyCommitSigs(header, commit, this._state.validators)
 
       // verifiable, let's update
       await this.update(header, commit)
@@ -196,7 +200,9 @@ class LightNode extends EventEmitter {
     }
 
     let newState = { header, commit, validators }
-    verify(this._state, newState)
+
+    if (!this.trustNode)
+      verify(this._state, newState)
 
     this._state = newState
     this.emit('update', header, commit, validators)
