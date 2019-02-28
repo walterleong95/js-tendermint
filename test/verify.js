@@ -1,6 +1,7 @@
 let randomBytes = require('crypto').pseudoRandomBytes
 let test = require('tape')
-let ed25519 = require('supercop.js')
+let nacl = require('tweetnacl');
+
 let {
   verifyCommit,
   getVoteSignBytes
@@ -83,8 +84,7 @@ function genCommit (header, validators) {
       block_id: blockId
     }
     let signBytes = Buffer.from(getVoteSignBytes(header.chain_id, precommit))
-    let pub = Buffer.from(validator.pub_key.value, 'base64')
-    let signature = ed25519.sign(signBytes, pub, validator.priv_key)
+    let signature = nacl.sign.detached(signBytes, validator.priv_key);
     precommit.signature = {
       type: 'tendermint/SignatureEd25519',
       value: signature.toString('base64')

@@ -1,7 +1,8 @@
 'use strict'
 
 const stringify = require('json-stable-stringify')
-const ed25519 = require('supercop.js')
+const nacl = require('tweetnacl');
+
 // TODO: try to load native ed25519 implementation, fall back to supercop.js
 const {
   getBlockHash,
@@ -132,7 +133,7 @@ function verifyCommitSigs (header, commit, validators) {
     let signBytes = getVoteSignBytes(header.chain_id, precommit)
     let pubKey = Buffer.from(validator.pub_key.value, 'base64')
 
-    if (!ed25519.verify(signature, signBytes, pubKey)) {
+    if (!nacl.sign.detached.verify(signBytes, signature, pubKey)) {
       throw Error('Invalid precommit signature')
     }
 
