@@ -1,3 +1,4 @@
+import 'babel-polyfill'
 module.exports = require('./lib/lightNode.js')
 module.exports.LightNode = require('./lib/lightNode.js')
 module.exports.RpcClient = require('./lib/rpc.js')
